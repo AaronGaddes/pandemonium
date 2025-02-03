@@ -2,9 +2,15 @@ import { Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../env";
-import { User } from "../../../shared/src";
+import { User as GameUser } from "../../../shared/src";
 
-export const users: User[] = [];
+declare global {
+  namespace Express {
+    interface User extends GameUser {}
+  }
+}
+
+export const users: GameUser[] = [];
 
 const authRouter = Router();
 
@@ -12,8 +18,10 @@ authRouter.get(
   "/self",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
-    if (req.user) {
-      res.json(req.user);
+    const user =
+      (req.user.id && users.find((u) => u.id === req.user.id)) || null;
+    if (user) {
+      res.json(user);
     } else {
       res.status(401).json({ message: "Unauthorized" });
     }

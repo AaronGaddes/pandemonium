@@ -19,10 +19,10 @@ export const HomePage = () => {
             <button>Start Game</button>
           </div>
         </Match>
-        <Match when={!user}>
+        <Match when={!user()}>
           <div>
             <h2>Log in to start playing</h2>
-            <button>Log in</button>
+            <A href="/createUser">Log in</A>
           </div>
         </Match>
       </Switch>

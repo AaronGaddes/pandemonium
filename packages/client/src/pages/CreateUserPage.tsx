@@ -1,8 +1,10 @@
 import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { Show } from "solid-js";
+import { useLocalStorage } from "../stores/LocalStorageContext";
 
 export const CreateUserPage = () => {
   const navigate = useNavigate();
+  const [_, { setItem }] = useLocalStorage();
   const postNewUser = action(async (formData: FormData) => {
     const username = formData.get("username");
     if (typeof username !== "string") {
@@ -26,8 +28,7 @@ export const CreateUserPage = () => {
     }
 
     const { token } = await response.json();
-    localStorage.setItem("authToken", token);
-
+    setItem("authToken", token);
     navigate("/");
   });
   const submission = useSubmission(postNewUser);

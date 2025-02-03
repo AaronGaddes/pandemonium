@@ -1,20 +1,16 @@
-import {
-  Component,
-  createEffect,
-  createResource,
-  createSignal,
-  onMount,
-  onCleanup,
-} from "solid-js";
+import { Component, createEffect, createResource } from "solid-js";
 import "./App.css";
 import { Route, Router, RouteSectionProps, useNavigate } from "@solidjs/router";
 import { CreateUserPage } from "./pages/CreateUserPage";
-import { UserHomePage } from "./pages/UserHomePage";
+import { GameList } from "./pages/GameList";
 import { userStore } from "./stores/userStore";
 import SocketManager from "./stores/SocketManager";
 import { User } from "../../shared/src";
 import { HomePage } from "./pages/HomePage";
-// import { SessionProvider, useSession } from "./stores/sessionContext";
+import {
+  LocalStorageProvider,
+  useLocalStorage,
+} from "./stores/LocalStorageContext";
 
 const fetchSelf = async (authToken: string) => {
   const response = await fetch("/auth/self", {
@@ -33,39 +29,24 @@ const fetchSelf = async (authToken: string) => {
 };
 
 const Layout: Component<RouteSectionProps> = (props) => {
-  // Set up a signal to store the auth token
-  // and initialize it with the value from localStorage
-  const [authToken, setAuthToken] = createSignal<string | null>(
-    localStorage.getItem("authToken")
-  );
-
-  // Listen for changes to the auth token in localStorage
-  const handleAuthTokenChange = (storageEvent: StorageEvent) => {
-    if (storageEvent.key === "authToken") {
-      setAuthToken(storageEvent.newValue);
-    }
-  };
-
-  onMount(() => {
-    window.addEventListener("storage", handleAuthTokenChange);
-  });
-
-  onCleanup(() => {
-    window.removeEventListener("storage", handleAuthTokenChange);
-  });
-
   const navigate = useNavigate();
+
+  const [storage, { removeItem }] = useLocalStorage();
+
+  const authToken = () => storage.authToken;
 
   const [user] = createResource(authToken, fetchSelf);
 
   const [_, setUserStoreData] = userStore;
 
-  // If the user doesn't exist or there was an error fetching the user,
-  // navigate to the create user page
-  // Otherwise, connect the socket and set the user in the user store
   createEffect(() => {
     const currentAuthToken = authToken();
+    if (user.loading) {
+      return;
+    }
     if ((user.state === "ready" && !user()) || user.error) {
+      setUserStoreData(null);
+      removeItem("authToken");
       navigate("/");
     } else if (user.state === "ready" && user() && currentAuthToken) {
       SocketManager.connect(currentAuthToken);
@@ -78,11 +59,13 @@ const Layout: Component<RouteSectionProps> = (props) => {
 
 function App() {
   return (
-    <Router root={Layout}>
-      <Route path="/" component={HomePage} />
-      <Route path="/games" component={UserHomePage} />
-      <Route path="/createUser" component={CreateUserPage} />
-    </Router>
+    <LocalStorageProvider>
+      <Router root={Layout}>
+        <Route path="/" component={HomePage} />
+        <Route path="/games" component={GameList} />
+        <Route path="/createUser" component={CreateUserPage} />
+      </Router>
+    </LocalStorageProvider>
   );
 }
 

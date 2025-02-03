@@ -3,7 +3,7 @@ import "../App.css";
 import { userStore } from "../stores/userStore";
 import { socketStatus } from "../stores/SocketManager";
 
-export const UserHomePage = () => {
+export const GameList = () => {
   const [user] = userStore;
 
   return (

@@ -5,7 +5,8 @@ import authRouter from "./routes/auth";
 import { JWT_SECRET, PORT } from "./env";
 import passport from "passport";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
-import { User } from "../../shared/src";
+import { User as GameUser } from "../../shared/src";
+import { SocketManager } from "./managers/SocketManager";
 
 const jwtDecodeOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -32,39 +33,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRouter);
 
-const io = new Server(server, {
-  serveClient: false,
-  path: "/socket.io",
-});
-
-io.engine.use(
-  (req: { _query: Record<string, string> }, res: Response, next: Function) => {
-    const isHandshake = req._query.sid === undefined;
-    if (isHandshake) {
-      passport.authenticate("jwt", { session: false })(req, res, next);
-    } else {
-      next();
-    }
-  }
-);
-
-io.on("connection", (socket) => {
-  console.log("a client connected, ID: ", socket.id);
-  const req = socket.request as Request & { user?: User };
-
-  socket.on("disconnect", () => {
-    console.log("a client disconnected, ID: ", socket.id);
-  });
-
-  if (!req.user) {
-    socket.disconnect();
-    return;
-  }
-
-  socket.on("whoami", (callback) => {
-    callback(req.user);
-  });
-});
+SocketManager.init(server);
 
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
