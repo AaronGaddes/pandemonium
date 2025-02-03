@@ -11,6 +11,11 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
+      "/auth": {
+        target: "http://localhost:6969",
+        ws: true,
+        changeOrigin: true,
+      },
       "/socket.io/": {
         target: "http://localhost:6969",
         changeOrigin: true,
